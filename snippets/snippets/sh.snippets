@@ -1,0 +1,121 @@
+snippet bash_here
+	if readlink -f . >/dev/null 2>&1 # {{{ makes readlink work on mac
+	then
+		readlink=readlink
+	else
+		if greadlink -f . >/dev/null 2>&1
+		then
+			readlink=greadlink
+		else
+			printf "You must install greadlink to use this (brew install coreutils)\\n" >&2
+		fi
+	fi # }}}
+
+	# Set $here to the full path to this script
+	me=\${BASH_SOURCE[0]}
+	[ -L "\$me" ] && me=\$(\$readlink -f "\$me")
+	here=\$(cd "\$(dirname "\$me")" && pwd)
+	just_me=\$(basename "\$me")
+snippet bash_vim
+	# vim: set foldmethod=marker et ts=4 sts=4 sw=4 ft=bash :
+snippet bash_err
+	# {{{ fail/bail on all errors
+	set -e
+	${0}
+	set +e
+	# }}} errors no longer fatal/halt
+snippet bash_debug
+	# {{{ Print bash debugging info
+	set -v
+	${0}
+	set +v
+	# }}} Stop printing debug info
+snippet bash_die
+	die() { # {{{
+		local -i code
+		code=\$1
+		shift
+		printf "Error! => %s\\n\\n" "\$*" >&2
+		usage >&2
+		# shellcheck disable=SC2086
+		exit \$code
+	} # }}}
+	${0}
+snippet bash_log
+	## Logging functions # {{{
+	log() { # {{{
+		printf "%s <%s> %s\\n" "\$(date '+%Y-%m-%d %H:%M:%S')" "\${just_me:-\$0}" "\$*"
+	} # }}}
+
+	debug() { # {{{
+		[ \$verbose -lt 2 ] && return 0
+		# shellcheck disable=SC2059
+		log_line=\$(printf "\$@")
+		log "[DEBUG] \$log_line" >&2
+	} # }}}
+
+	warn() { # {{{
+		# shellcheck disable=SC2059
+		log_line=\$(printf "\$@")
+		log "[WARN] \$log_line" >&2
+	} # }}}
+
+	error() { # {{{
+		# shellcheck disable=SC2059
+		log_line=\$(printf "\$@")
+		log "[ERROR] \$log_line" >&2
+	} # }}}
+
+	info() { # {{{
+		[ \$verbose -lt 1 ] && return 0
+		# shellcheck disable=SC2059
+		log_line=\$(printf "\$@")
+		log "[INFO] \$log_line" >&2
+	} # }}}
+	# }}}
+snippet bash_usage
+	usage() { # {{{
+		cat <<-EOT
+		Usage: \$just_me <options> ${1}
+			Options:
+				${2}
+				-h            Show help / usage
+	EOT
+	} # }}}
+	${0}
+snippet bash_getopts
+	while getopts :h${1} opt # {{{
+	do
+		case \$opt in
+			${2})
+				${3}
+				;;
+			h)
+				usage
+				exit
+				;;
+			:)
+				printf "Option '%s' requires an argument\\n" "\${OPTARG}" >&2
+				usage >&2
+				exit 28
+				;;
+			\?)
+				printf "Invalid option '%s'\\n" "\${OPTARG}" >&2
+				usage >&2
+				exit 27
+				;;
+		esac
+	done # }}}
+	shift \$((OPTIND-1))
+	${0}
+snippet containsElement
+	containsElement () { # {{{
+	  local e match
+	  match=\$1
+	  shift
+	  for e
+	  do
+		  [[ "\$e" == "\$match" ]] && return 0
+	  done
+	  return 1
+	} # }}}
