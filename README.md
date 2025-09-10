@@ -1,4 +1,4 @@
-# 💤 LazyVim
+# 💤 My nvim (LazyVim) configuration
 
 My nvim config
 
